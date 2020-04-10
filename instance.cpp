@@ -7,23 +7,39 @@
 
 using namespace std;
 
+vector<int> unionSet(vector<int> s1, vector<int> s2) {
+	vector<int> uniao (s1.size() + s2.size());
+	vector<int>::iterator it;
+
+	it = set_union(s1.begin(), s1.end(), s2.begin(), s2.end(), uniao.begin());
+	uniao.resize(it - uniao.begin());
+
+	return uniao;
+}
+
+int diffSet(vector<int> s1, vector<int> s2) {
+	vector<int> diff (s1.size());
+	vector<int>::iterator it;
+
+	it = set_difference(s1.begin(), s1.end(), s2.begin(), s2.end(), diff.begin());
+	diff.resize(it - diff.begin());
+
+	return diff.size();
+}
 
 class Instance {
 
 	public:
 		Instance(string caminho);
 		float greedy();
+		vector<vector<int>> construirCoberturas() const;
+		int melhorCobertura(vector<vector<int>> coberturas, vector<int> universo) const;
 
 		int n;
 		int m;
 		vector<float> custos;
 		vector<vector<char>> matriz;
-	private:
 		vector<vector<int>> coberturas;
-		vector<vector<int>> construirCoberturas();
-		int diffCobertura(vector<int> s1, vector<int> s2);
-		vector<int> unionSet(vector<int>s1, vector<int> s2);
-		int melhorCobertura(vector<vector<int>> coberturas, vector<int> universo);
 	
 };
 
@@ -53,49 +69,27 @@ Instance::Instance(string caminho) {
 		}
 	}
 
+	for (int i = 0; i < this->n; i++) {
+		vector<int> s_i;
+		for (int j = 0; j < this->m; j++) {
+			if (this->matriz[j][i] != 0) {
+				s_i.push_back(j);
+			}
+		}
+		this->coberturas.push_back(s_i);
+	}
 }
 
-vector<vector<int>> Instance::construirCoberturas() {
-	if (this->coberturas.empty()) {
-		for (int i = 0; i < this->n; i++) {
-			vector<int> s_i;
-			for (int j = 0; j < this->m; j++) {
-				if (this->matriz[j][i] != 0) {
-					s_i.push_back(j);
-				}
-			}
-			this->coberturas.push_back(s_i);
-		}
-	}
+vector<vector<int>> Instance::construirCoberturas() const {
 	return this->coberturas;
 }
 
-int Instance::diffCobertura(vector<int> s1, vector<int> s2) {
-	vector<int> diff (s1.size());
-	vector<int>::iterator it;
-
-	it = set_difference(s1.begin(), s1.end(), s2.begin(), s2.end(), diff.begin());
-	diff.resize(it - diff.begin());
-
-	return diff.size();
-}
-
-vector<int> Instance::unionSet(vector<int> s1, vector<int> s2) {
-	vector<int> uniao (s1.size() + s2.size());
-	vector<int>::iterator it;
-
-	it = set_union(s1.begin(), s1.end(), s2.begin(), s2.end(), uniao.begin());
-	uniao.resize(it - uniao.begin());
-
-	return uniao;
-}
-
-int Instance::melhorCobertura(vector<vector<int>> coberturas, vector<int> universo) {
+int Instance::melhorCobertura(vector<vector<int>> coberturas, vector<int> universo) const{
 	float min_custo = numeric_limits<float>::infinity(), custo_aux;
 	int indMin = -1, tam_aux;
 
 	for (int i = 0; i < this->n; i++) {
-		tam_aux = this->diffCobertura(coberturas[i], universo);
+		tam_aux = diffSet(coberturas[i], universo);
 		if (tam_aux > 0) {
 			custo_aux =  this->custos[i] / tam_aux;
 			if (custo_aux < min_custo) {
@@ -113,15 +107,13 @@ float Instance::greedy() {
 	vector<vector<int>> coberturas = this->construirCoberturas();
 	vector<int> universo;
 	float custo = 0;
-	vector<int> colunas;
 
 	do {
 		int indElemento = this->melhorCobertura(coberturas, universo);
 
 		if (indElemento >= 0) {
-			colunas.push_back(indElemento);
 			custo += this->custos[indElemento];
-			universo = this->unionSet(coberturas[indElemento], universo);
+			universo = unionSet(coberturas[indElemento], universo);
 		}
 
 	} while (universo.size() < this->m);
@@ -134,6 +126,7 @@ class LagrangeanSetCovering {
 	public:
 		LagrangeanSetCovering(const Instance &instancia, vector<float> &multiplicadores);
 		float calcularLowerBound();
+		float heuristica();
 
 
 		vector<float> &multiplicadores;
@@ -168,6 +161,30 @@ float LagrangeanSetCovering::calcularLowerBound() {
 	}
 
 	return Z_LB;
+}
+
+float LagrangeanSetCovering::heuristica() {
+	vector<vector<int>> coberturas = this->instancia.construirCoberturas();
+	vector<int> universo;
+	float custo = 0;
+
+	for (int i = 0; i < this->instancia.n; i++) {
+		if (this->C[i] <= 0) {
+			universo = unionSet(this->instancia.coberturas[i], universo);
+			custo += this->instancia.custos[i];
+		}
+	}
+
+	while (universo.size() < this->instancia.m) {
+		int indElemento = this->instancia.melhorCobertura(coberturas, universo);
+
+		if (indElemento >= 0) {
+			custo += this->instancia.custos[indElemento];
+			universo = unionSet(coberturas[indElemento], universo);
+		}
+	}
+
+	return custo;
 }
 
 int main(int argc, char const *argv[])
