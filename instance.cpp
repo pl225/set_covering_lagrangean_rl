@@ -205,6 +205,8 @@ float LagrangeanSetCovering::heuristica() {
 void LagrangeanSetCovering::excluirColunas(float Z_UB, float Z_LB) {
 	for (int i = 0; i < this->instancia.n; i++) {
 		if (this->C[i] > 0 && Z_LB + this->instancia.custos[i] > Z_UB) {
+			this->C[i] = this->C.back();
+			this->C.pop_back();
 			this->instancia.excluirColuna(i);
 			break;
 		}
@@ -279,10 +281,10 @@ int main(int argc, char const *argv[]) {
 			Z_MAX = Z_LB;
 			iteracoes_sem_melhora = 0;
 			float custoHeuristica = lag.heuristica();
+			lag.excluirColunas(Z_UB, Z_LB);
 			if (custoHeuristica < Z_UB) {
 				Z_UB = custoHeuristica;
 			}
-			lag.excluirColunas(Z_UB, Z_LB);
 		} else {
 			iteracoes_sem_melhora += 1;
 		}
