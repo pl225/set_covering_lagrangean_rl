@@ -35,13 +35,29 @@ class Instance {
 		vector<vector<int>> construirCoberturas() const;
 		int melhorCobertura(vector<vector<int>> coberturas, vector<int> universo) const;
 
+		void excluirColuna(int i);
+
 		int n;
 		int m;
 		vector<float> custos;
 		vector<vector<char>> matriz;
 		vector<vector<int>> coberturas;
+		vector<int> colunasExcluidas;
 	
 };
+
+void Instance::excluirColuna(int i) {
+	this->custos[i] = this->custos.back();
+	this->custos.pop_back();
+	this->coberturas[i] = this->coberturas.back();
+	this->coberturas.pop_back();
+	for (int k = 0; k < this->m; k++) {
+		this->matriz[k][i] = this->matriz[k].back();
+		this->matriz[k].pop_back();
+	}
+	this->colunasExcluidas.push_back(i);
+	this->n--;
+}
 
 Instance::Instance(string caminho) {
 	ifstream arquivo(caminho);
@@ -115,7 +131,6 @@ float Instance::greedy() {
 			custo += this->custos[indElemento];
 			universo = unionSet(coberturas[indElemento], universo);
 		}
-
 	} while (universo.size() < this->m);
 
 	return custo;
@@ -124,18 +139,19 @@ float Instance::greedy() {
 class LagrangeanSetCovering {
 	
 	public:
-		LagrangeanSetCovering(const Instance &instancia, vector<float> &multiplicadores);
+		LagrangeanSetCovering(Instance &instancia, vector<float> &multiplicadores);
 		float calcularLowerBound();
 		float heuristica();
 
 
 		vector<float> &multiplicadores;
-		const Instance &instancia;
+		Instance &instancia;
 		vector<float> C;
+		void excluirColunas(float Z_UB, float Z_LB);
 	
 };
 
-LagrangeanSetCovering::LagrangeanSetCovering(const Instance &instancia, vector<float> &multiplicadores) :
+LagrangeanSetCovering::LagrangeanSetCovering(Instance &instancia, vector<float> &multiplicadores) :
 	instancia(instancia),
 	multiplicadores(multiplicadores) {
 
@@ -186,6 +202,15 @@ float LagrangeanSetCovering::heuristica() {
 	return custo;
 }
 
+void LagrangeanSetCovering::excluirColunas(float Z_UB, float Z_LB) {
+	for (int i = 0; i < this->instancia.n; i++) {
+		if (this->C[i] > 0 && Z_LB + this->instancia.custos[i] > Z_UB) {
+			this->instancia.excluirColuna(i);
+			break;
+		}
+	}
+}
+
 int main(int argc, char const *argv[]) {
 	if (argc == 0) {
 		exit(1);
@@ -215,11 +240,11 @@ int main(int argc, char const *argv[]) {
 
 	vector<float> G(instancia.m, 0); // inicializando G, vetor de subgradientes
 
+	// passo 2
+	float Z_LB = lag.calcularLowerBound();
+	// fim passo 2
+
 	while (Z_MAX != Z_UB && pi > MENOR_PI && i < MAX_IT) {
-		
-		// passo 2
-		float Z_LB = lag.calcularLowerBound();
-		// fim passo 2
 
 		float quadradoSub = 0;
 
@@ -238,7 +263,7 @@ int main(int argc, char const *argv[]) {
 
 		// passo 4
 		float T = (pi * (PER_Z_UB * Z_UB - Z_LB)) / quadradoSub;
-		// passo 4
+		// fim passo 4
 		float candidatoValor = 0;
 
 		// passo 5
@@ -248,6 +273,8 @@ int main(int argc, char const *argv[]) {
 		}
 		// fim passo 5
 
+		Z_LB = lag.calcularLowerBound();
+
 		if (Z_LB > Z_MAX) {
 			Z_MAX = Z_LB;
 			iteracoes_sem_melhora = 0;
@@ -255,6 +282,7 @@ int main(int argc, char const *argv[]) {
 			if (custoHeuristica < Z_UB) {
 				Z_UB = custoHeuristica;
 			}
+			lag.excluirColunas(Z_UB, Z_LB);
 		} else {
 			iteracoes_sem_melhora += 1;
 		}
@@ -265,6 +293,7 @@ int main(int argc, char const *argv[]) {
 		}
 		i++;
 	}
+	cout << instancia.colunasExcluidas.size() << endl;
 	cout << Z_UB << endl;
 	cout << i << endl;
 	cout << Z_MAX << endl;
