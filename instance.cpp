@@ -169,13 +169,16 @@ float LagrangeanSetCovering::calcularLowerBound() {
 
 int main(int argc, char const *argv[])
 {
-	Instance instancia("instancias/scp47.txt");
+	Instance instancia("instancias/scp41.txt");
 
 	// passo 1
 
 	float pi = 2; // 0 < pi <= 2
 	const float MENOR_PI = 0.005;
-	const int N = 30;
+	const float PER_Z_UB = 1.02;
+	const int MAX_IT = 1000;
+	const int N = 50; // 30
+	int i = 0;
 
 	vector<float> multiplicadores(instancia.m, 0);
 	//multiplicadores[0] = 1.5;
@@ -193,7 +196,7 @@ int main(int argc, char const *argv[])
 
 	vector<float> G(instancia.m, 0); // inicializando G, vetor de subgradientes
 
-	while (Z_MAX != Z_UB && pi > MENOR_PI) {
+	while (Z_MAX != Z_UB && pi > MENOR_PI && i < MAX_IT) {
 		
 		// passo 2
 		float Z_LB = lag.calcularLowerBound();
@@ -215,7 +218,7 @@ int main(int argc, char const *argv[])
 		// fim passo 3
 
 		// passo 4
-		float T = (pi * (Z_UB - Z_LB)) / quadradoSub;
+		float T = (pi * (PER_Z_UB * Z_UB - Z_LB)) / quadradoSub;
 		// passo 4
 		float candidatoValor = 0;
 
@@ -237,9 +240,9 @@ int main(int argc, char const *argv[])
 			iteracoes_sem_melhora = 0;
 			pi /= 2;
 		}
-
+		i++;
 	}
-
+	cout << i << endl;
 	cout << Z_MAX << endl;
 
 	return 0;
