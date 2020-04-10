@@ -124,12 +124,6 @@ float Instance::greedy() {
 
 	} while (universo.size() < this->m);
 
-	cout << custo << endl;
-	for (int i : colunas) {
-		cout << i << ' ';
-	}
-	cout << endl;
-
 	return custo;
 }
 
