@@ -243,11 +243,13 @@ int main(int argc, char const *argv[]) {
 	vector<float> G(instancia.m, 0); // inicializando G, vetor de subgradientes
 
 	// passo 2
-	float Z_LB = lag.calcularLowerBound();
+	float Z_LB = 0;//lag.calcularLowerBound();
 	// fim passo 2
 
 	while (Z_MAX != Z_UB && pi > MENOR_PI && i < MAX_IT) {
-
+		
+		Z_LB = lag.calcularLowerBound();
+		
 		float quadradoSub = 0;
 
 		// passo 3
@@ -275,7 +277,7 @@ int main(int argc, char const *argv[]) {
 		}
 		// fim passo 5
 
-		Z_LB = lag.calcularLowerBound();
+		//Z_LB = lag.calcularLowerBound();
 
 		if (Z_LB > Z_MAX) {
 			Z_MAX = Z_LB;
