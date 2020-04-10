@@ -19,6 +19,7 @@ class Instance {
 		vector<float> custos;
 		vector<vector<char>> matriz;
 	private:
+		vector<vector<int>> coberturas;
 		vector<vector<int>> construirCoberturas();
 		int diffCobertura(vector<int> s1, vector<int> s2);
 		vector<int> unionSet(vector<int>s1, vector<int> s2);
@@ -55,17 +56,18 @@ Instance::Instance(string caminho) {
 }
 
 vector<vector<int>> Instance::construirCoberturas() {
-	vector<vector<int>> coberturas(this->n);
-	for (int i = 0; i < this->n; i++) {
-		vector<int> s_i;
-		for (int j = 0; j < this->m; j++) {
-			if (this->matriz[j][i] != 0) {
-				s_i.push_back(j);
+	if (this->coberturas.empty()) {
+		for (int i = 0; i < this->n; i++) {
+			vector<int> s_i;
+			for (int j = 0; j < this->m; j++) {
+				if (this->matriz[j][i] != 0) {
+					s_i.push_back(j);
+				}
 			}
+			this->coberturas.push_back(s_i);
 		}
-		coberturas[i] = s_i;
 	}
-	return coberturas;
+	return this->coberturas;
 }
 
 int Instance::diffCobertura(vector<int> s1, vector<int> s2) {
@@ -133,6 +135,7 @@ class LagrangeanSetCovering {
 		LagrangeanSetCovering(const Instance &instancia, vector<float> &multiplicadores);
 		float calcularLowerBound();
 
+
 		vector<float> &multiplicadores;
 		const Instance &instancia;
 		vector<float> C;
@@ -169,7 +172,10 @@ float LagrangeanSetCovering::calcularLowerBound() {
 
 int main(int argc, char const *argv[])
 {
-	Instance instancia("instancias/scp41.txt");
+	if (argc == 0) {
+		exit(1);
+	}
+	Instance instancia(argv[1]);
 
 	// passo 1
 
@@ -181,9 +187,6 @@ int main(int argc, char const *argv[])
 	int i = 0;
 
 	vector<float> multiplicadores(instancia.m, 0);
-	//multiplicadores[0] = 1.5;
-	//multiplicadores[1] = 1.6;
-	//multiplicadores[2] = 2.2;
 
 	LagrangeanSetCovering lag(instancia, multiplicadores);
 
@@ -242,6 +245,7 @@ int main(int argc, char const *argv[])
 		}
 		i++;
 	}
+	cout << Z_UB << endl;
 	cout << i << endl;
 	cout << Z_MAX << endl;
 
