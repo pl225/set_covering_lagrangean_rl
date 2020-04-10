@@ -183,12 +183,10 @@ float LagrangeanSetCovering::heuristica() {
 			universo = unionSet(coberturas[indElemento], universo);
 		}
 	}
-
 	return custo;
 }
 
-int main(int argc, char const *argv[])
-{
+int main(int argc, char const *argv[]) {
 	if (argc == 0) {
 		exit(1);
 	}
@@ -204,6 +202,7 @@ int main(int argc, char const *argv[])
 	int i = 0;
 
 	vector<float> multiplicadores(instancia.m, 0);
+	//multiplicadores[0] = 1.5, multiplicadores[1] = 1.6, multiplicadores[2] = 2.2;
 
 	LagrangeanSetCovering lag(instancia, multiplicadores);
 
@@ -252,6 +251,10 @@ int main(int argc, char const *argv[])
 		if (Z_LB > Z_MAX) {
 			Z_MAX = Z_LB;
 			iteracoes_sem_melhora = 0;
+			float custoHeuristica = lag.heuristica();
+			if (custoHeuristica < Z_UB) {
+				Z_UB = custoHeuristica;
+			}
 		} else {
 			iteracoes_sem_melhora += 1;
 		}
