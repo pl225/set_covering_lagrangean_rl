@@ -242,13 +242,13 @@ int main(int argc, char const *argv[]) {
 
 	vector<float> G(instancia.m, 0); // inicializando G, vetor de subgradientes
 
-	// passo 2
-	float Z_LB = 0;//lag.calcularLowerBound();
-	// fim passo 2
+	float Z_LB = 0;
 
-	while (Z_MAX != Z_UB && pi > MENOR_PI && i < MAX_IT) {
+	while (Z_MAX < Z_UB && pi > MENOR_PI && i < MAX_IT) {
 		
+		// passo 2
 		Z_LB = lag.calcularLowerBound();
+		// fim passo 2
 		
 		float quadradoSub = 0;
 
@@ -277,15 +277,13 @@ int main(int argc, char const *argv[]) {
 		}
 		// fim passo 5
 
-		//Z_LB = lag.calcularLowerBound();
-
 		if (Z_LB > Z_MAX) {
 			Z_MAX = Z_LB;
 			iteracoes_sem_melhora = 0;
 			float custoHeuristica = lag.heuristica();
-			lag.excluirColunas(Z_UB, Z_LB);
 			if (custoHeuristica < Z_UB) {
 				Z_UB = custoHeuristica;
+				lag.excluirColunas(Z_UB, Z_LB);
 			}
 		} else {
 			iteracoes_sem_melhora += 1;
