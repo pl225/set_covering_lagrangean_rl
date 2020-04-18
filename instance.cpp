@@ -272,6 +272,33 @@ float LagrangeanSetCovering::heuristica() {
 }
 
 bool LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
+
+	for (int i = this->jr_1 + 1; i < this->instancia.n; i++) {
+		
+		int x_j = this->candidatos[i].second;
+		int elementosCobertos = this->instancia.coberturas[x_j].size();
+		float novoZ_LB = this->C[x_j];
+
+		for (int j = 0; j < this->instancia.n; j++) {
+			pair<double, int> p = this->candidatos[j];
+			if (p.second != x_j) {
+				if (elementosCobertos + this->instancia.coberturas[p.second].size() <= this->instancia.m) {
+					elementosCobertos += this->instancia.coberturas[p.second].size();
+					novoZ_LB += this->C[p.second];
+				} else {
+					float valorFr = (float) (this->instancia.m - elementosCobertos) / this->instancia.coberturas[p.second].size();
+					novoZ_LB += this->C[p.second] * valorFr;
+					break;
+				}
+			}
+		}
+
+		if (novoZ_LB > Z_UB) {
+			this->instancia.excluirColuna(x_j);
+			return true;
+		}
+	}
+
 	for (int i = 0; i < this->jr_1 + 1; i++) {
 		
 		int x_j = this->candidatos[i].second;
