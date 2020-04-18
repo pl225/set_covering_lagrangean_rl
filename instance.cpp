@@ -180,12 +180,14 @@ class LagrangeanSetCovering {
 		LagrangeanSetCovering(Instance &instancia);
 		float calcularLowerBound();
 		float heuristica();
-		void reduzir(float Z_UB, float Z_LB);
+		bool reduzir(float Z_UB, float Z_LB);
 
 		vector<float> multiplicadores;
 		Instance &instancia;
 		vector<float> C;
 		vector<float> X;
+		vector<pair<double, int>> candidatos;
+		int jr_1; // indice j(r-1)
 		float custoAcumulado;
 	
 };
@@ -200,7 +202,7 @@ float LagrangeanSetCovering::calcularLowerBound() {
 	this->C = vector<float>(this->instancia.n, 0.0);
 	this->X = vector<float>(this->instancia.n, 0.0);
 
-	vector<pair<double, int>> candidatos(this->instancia.n);
+	this->candidatos = vector<pair<double, int>>(this->instancia.n);
 
 	float Z_LB = this->custoAcumulado;
 	float custoOriginal = this->custoAcumulado;
@@ -212,18 +214,18 @@ float LagrangeanSetCovering::calcularLowerBound() {
 			somaMultiplicadores += this->multiplicadores[j] * this->instancia.matriz[j][i];
 		}
 		this->C[i] -= somaMultiplicadores;
-		candidatos[i] = make_pair(this->C[i] / this->instancia.coberturas[i].size(), i);
+		this->candidatos[i] = make_pair(this->C[i] / this->instancia.coberturas[i].size(), i);
 	}
 
-	sort(candidatos.begin(), candidatos.end());
+	sort(this->candidatos.begin(), this->candidatos.end());
 
-	int elementosCobertos = 0, jr_1 = 0;
-	for (int i = 0; i < candidatos.size(); i++) {
-		const pair<double, int> p = candidatos[i];
+	int elementosCobertos = 0;
+	for (int i = 0; i < this->candidatos.size(); i++) {
+		const pair<double, int> p = this->candidatos[i];
 		if (elementosCobertos + this->instancia.coberturas[p.second].size() <= this->instancia.m) {
 			elementosCobertos += this->instancia.coberturas[p.second].size();
 			this->X[p.second] = 1;
-			jr_1 = i;
+			this->jr_1 = i;
 			Z_LB += this->C[p.second];
 			custoOriginal += this->instancia.custos[p.second];
 		} else {
@@ -232,7 +234,7 @@ float LagrangeanSetCovering::calcularLowerBound() {
 	}
 
 	if (elementosCobertos < this->instancia.m) {
-		int elementoFr = candidatos[jr_1 + 1].second;
+		int elementoFr = this->candidatos[jr_1 + 1].second;
 		float valorFr = (float) (this->instancia.m - elementosCobertos) / this->instancia.coberturas[elementoFr].size();
 		this->X[elementoFr] = valorFr;
 		Z_LB += this->C[elementoFr] * valorFr;
@@ -269,19 +271,38 @@ float LagrangeanSetCovering::heuristica() {
 	return custo;
 }
 
-void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
-	for (int i = 0; i < this->instancia.n; i++) {
-		if (this->C[i] > 0 && Z_LB + this->C[i] > Z_UB) {
-			this->instancia.excluirColuna(i);
-			break;
-		} else if (this->C[i] <= 0 && Z_LB - this->C[i] > Z_UB) {
-			this->custoAcumulado += this->instancia.custos[i];
-			vector<int> linhasParaExcluir = this->instancia.excluirColuna(i);
+bool LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
+	for (int i = 0; i < this->jr_1 + 1; i++) {
+		
+		int x_j = this->candidatos[i].second;
+		int elementosCobertos = this->instancia.m - this->instancia.coberturas[x_j].size();
+		int x_jr = this->candidatos[this->jr_1 + 1].second;
+		
+		float novoZ_LB = Z_LB - (this->C[x_j] + this->C[x_jr] * this->X[x_jr]);
+		for (int j = this->jr_1 + 1; this->instancia.n; j++) {
+			pair<double, int> p = this->candidatos[j];
+			if (elementosCobertos + this->instancia.coberturas[p.second].size() <= this->instancia.m) {
+				elementosCobertos += this->instancia.coberturas[p.second].size();
+				novoZ_LB += this->C[p.second];
+			} else {
+				float valorFr = (float) (this->instancia.m - elementosCobertos) / this->instancia.coberturas[p.second].size();
+				novoZ_LB += this->C[p.second] * valorFr;
+				break;
+			}
+		}
+
+		if (novoZ_LB > Z_UB) {
+			this->custoAcumulado += this->instancia.custos[x_j];
+			vector<int> linhasParaExcluir = this->instancia.excluirColuna(x_j);
 			this->multiplicadores = deleteByIndexes<float>(this->multiplicadores, linhasParaExcluir);
 			this->instancia.excluirLinhas(linhasParaExcluir);
-			break;
+			
+			return true;
 		}
+		
 	}
+
+	return false;
 }
 
 int main(int argc, char const *argv[]) {
@@ -349,7 +370,7 @@ int main(int argc, char const *argv[]) {
 			float custoHeuristica = lag.heuristica();
 			if (custoHeuristica < Z_UB) {
 				Z_UB = custoHeuristica;
-				//lag.reduzir(Z_UB, Z_LB);
+				lag.reduzir(Z_UB, Z_LB);
 			}
 		} else {
 			iteracoes_sem_melhora += 1;
