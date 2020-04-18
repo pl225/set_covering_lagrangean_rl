@@ -185,6 +185,7 @@ class LagrangeanSetCovering {
 		vector<float> multiplicadores;
 		Instance &instancia;
 		vector<float> C;
+		vector<float> X;
 		float custoAcumulado;
 	
 };
@@ -197,8 +198,12 @@ LagrangeanSetCovering::LagrangeanSetCovering(Instance &instancia) :
 
 float LagrangeanSetCovering::calcularLowerBound() {
 	this->C = vector<float>(this->instancia.n, 0.0);
+	this->X = vector<float>(this->instancia.n, 0.0);
+
+	vector<pair<double, int>> candidatos(this->instancia.n);
 
 	float Z_LB = this->custoAcumulado;
+	float custoOriginal = this->custoAcumulado;
 
 	for (int i = 0; i < this->instancia.n; i++) {
 		this->C[i] = this->instancia.custos[i];
@@ -207,7 +212,31 @@ float LagrangeanSetCovering::calcularLowerBound() {
 			somaMultiplicadores += this->multiplicadores[j] * this->instancia.matriz[j][i];
 		}
 		this->C[i] -= somaMultiplicadores;
-		Z_LB += this->C[i] * (this->C[i] <= 0);
+		candidatos[i] = make_pair(this->C[i] / this->instancia.coberturas[i].size(), i);
+	}
+
+	sort(candidatos.begin(), candidatos.end());
+
+	int elementosCobertos = 0, jr_1 = 0;
+	for (int i = 0; i < candidatos.size(); i++) {
+		const pair<double, int> p = candidatos[i];
+		if (elementosCobertos + this->instancia.coberturas[p.second].size() <= this->instancia.m) {
+			elementosCobertos += this->instancia.coberturas[p.second].size();
+			this->X[p.second] = 1;
+			jr_1 = i;
+			Z_LB += this->C[p.second];
+			custoOriginal += this->instancia.custos[p.second];
+		} else {
+			this->X[p.second] = 0;
+		}
+	}
+
+	if (elementosCobertos < this->instancia.m) {
+		int elementoFr = candidatos[jr_1 + 1].second;
+		float valorFr = (float) (this->instancia.m - elementosCobertos) / this->instancia.coberturas[elementoFr].size();
+		this->X[elementoFr] = valorFr;
+		Z_LB += this->C[elementoFr] * valorFr;
+		custoOriginal += this->instancia.custos[elementoFr];
 	}
 
 	for (const float f : this->multiplicadores) {
@@ -223,7 +252,7 @@ float LagrangeanSetCovering::heuristica() {
 	float custo = this->custoAcumulado;
 
 	for (int i = 0; i < this->instancia.n; i++) {
-		if (this->C[i] <= 0) {
+		if (this->X[i] != 0) {
 			universo = unionSet(this->instancia.coberturas[i], universo);
 			custo += this->instancia.custos[i];
 		}
@@ -246,7 +275,6 @@ void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
 			this->instancia.excluirColuna(i);
 			break;
 		} else if (this->C[i] <= 0 && Z_LB - this->C[i] > Z_UB) {
-			cout << Z_LB << ' ' << Z_UB << endl;
 			this->custoAcumulado += this->instancia.custos[i];
 			vector<int> linhasParaExcluir = this->instancia.excluirColuna(i);
 			this->multiplicadores = deleteByIndexes<float>(this->multiplicadores, linhasParaExcluir);
@@ -282,7 +310,7 @@ int main(int argc, char const *argv[]) {
 
 	float Z_LB = 0;
 
-	while (Z_MAX < Z_UB && pi > MENOR_PI && i < MAX_IT) {
+	while (Z_MAX != Z_UB && pi > MENOR_PI && i < MAX_IT) {
 		
 		// passo 2
 		Z_LB = lag.calcularLowerBound();
@@ -296,7 +324,7 @@ int main(int argc, char const *argv[]) {
 
 			float soma = 0;
 			for (int j = 0; j < instancia.n; j++) {
-				soma += instancia.matriz[i][j] * (lag.C[j] <= 0); // C[i] <= 0 é X_j
+				soma += instancia.matriz[i][j] * lag.X[j]; // C[i] <= 0 é X_j
 			}
 			G[i] -= soma;
 			quadradoSub += G[i] * G[i];
@@ -321,7 +349,7 @@ int main(int argc, char const *argv[]) {
 			float custoHeuristica = lag.heuristica();
 			if (custoHeuristica < Z_UB) {
 				Z_UB = custoHeuristica;
-				lag.reduzir(Z_UB, Z_LB);
+				//lag.reduzir(Z_UB, Z_LB);
 			}
 		} else {
 			iteracoes_sem_melhora += 1;
