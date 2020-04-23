@@ -229,7 +229,7 @@ float LagrangeanSetCovering::calcularLowerBound() {
 			Z_LB += this->C[p.second];
 			custoOriginal += this->instancia.custos[p.second];
 		} else {
-			this->X[p.second] = 0;
+			break;
 		}
 	}
 
@@ -358,14 +358,13 @@ int main(int argc, char const *argv[]) {
 
 	float Z_LB = 0;
 
-	while (Z_MAX != Z_UB && pi > MENOR_PI && i < MAX_IT) {
+	while ((Z_UB - Z_MAX) > (1 - 0.00001) && pi > MENOR_PI && i < MAX_IT) {
 		
 		// passo 2
 		Z_LB = lag.calcularLowerBound();
 		// fim passo 2
 		
 		float quadradoSub = 0;
-
 		// passo 3
 		for (int i = 0; i < instancia.m; i++) { // calculando subgradientes
 			G[i] = 1; // cada linha tem que ser coberta por ao menos uma coluna
