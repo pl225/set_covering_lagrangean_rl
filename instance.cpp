@@ -31,7 +31,7 @@ template <typename tipo> vector<tipo> deleteByIndexes(vector<tipo> vetor, vector
 	vector<tipo> vetorNovo;
 	int i = 0, j = 0;
 	while (i < vetor.size()) {
-		if (j < indices.size() < indices[j] == i) {
+		if (j < indices.size() && indices[j] == i) {
 			j++;
 		} else {
 			vetorNovo.push_back(vetor[i]);
