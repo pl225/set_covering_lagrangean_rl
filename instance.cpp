@@ -29,7 +29,7 @@ vector<int> diffSet(vector<int> s1, vector<int> s2) {
 
 template <typename tipo> vector<tipo> deleteByIndexes(vector<tipo> vetor, vector<int> indices) {
 	vector<tipo> vetorNovo;
-	int i = 0, j = 0;
+	unsigned i = 0, j = 0;
 	while (i < vetor.size()) {
 		if (j < indices.size() && indices[j] == i) {
 			j++;
@@ -200,12 +200,12 @@ LagrangeanSetCovering::LagrangeanSetCovering(Instance &instancia) :
 
 float LagrangeanSetCovering::calcularLowerBound() {
 	this->C = vector<float>(this->instancia.n, 0.0);
-	this->X = vector<float>(this->instancia.n, 0.0);
+	this->X = vector<float>(this->instancia.n, 1.0);
 
 	this->candidatos = vector<pair<double, int>>(this->instancia.n);
 
 	float Z_LB = this->custoAcumulado;
-	float custoOriginal = this->custoAcumulado;
+	unsigned somatorioDireito = 0;
 
 	for (int i = 0; i < this->instancia.n; i++) {
 		this->C[i] = this->instancia.custos[i];
@@ -215,30 +215,33 @@ float LagrangeanSetCovering::calcularLowerBound() {
 		}
 		this->C[i] -= somaMultiplicadores;
 		this->candidatos[i] = make_pair(this->C[i] / this->instancia.coberturas[i].size(), i);
+		somatorioDireito += this->instancia.coberturas[i].size();
 	}
+	somatorioDireito -= instancia.m;
 
-	sort(this->candidatos.begin(), this->candidatos.end());
+	sort(this->candidatos.begin(), this->candidatos.end(), greater<>());
 
-	int elementosCobertos = 0;
-	for (int i = 0; i < this->candidatos.size(); i++) {
+	unsigned elementosCobertos = 0;
+	for (unsigned i = 0; i < this->candidatos.size(); i++) {
 		const pair<double, int> p = this->candidatos[i];
-		if (elementosCobertos + this->instancia.coberturas[p.second].size() <= this->instancia.m) {
+		if (elementosCobertos + this->instancia.coberturas[p.second].size() <= somatorioDireito) {
 			elementosCobertos += this->instancia.coberturas[p.second].size();
-			this->X[p.second] = 1;
+			this->X[p.second] = 0;
 			this->jr_1 = i;
-			Z_LB += this->C[p.second];
-			custoOriginal += this->instancia.custos[p.second];
 		} else {
 			break;
 		}
 	}
 
-	if (elementosCobertos < this->instancia.m) {
+	if (elementosCobertos < somatorioDireito) {
 		int elementoFr = this->candidatos[jr_1 + 1].second;
-		float valorFr = (float) (this->instancia.m - elementosCobertos) / this->instancia.coberturas[elementoFr].size();
+		int cobertosFr = this->instancia.coberturas[elementoFr].size();
+		float valorFr = (float) (cobertosFr - (somatorioDireito - elementosCobertos)) / cobertosFr;
 		this->X[elementoFr] = valorFr;
-		Z_LB += this->C[elementoFr] * valorFr;
-		custoOriginal += this->instancia.custos[elementoFr];
+	}
+
+	for (int i = 0; i < this->instancia.n; i++) {
+		Z_LB += this->X[i] * this->C[i];
 	}
 
 	for (const float f : this->multiplicadores) {
