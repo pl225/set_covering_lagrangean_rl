@@ -185,6 +185,8 @@ class LagrangeanSetCovering {
 		vector<float> multiplicadores;
 		Instance &instancia;
 		vector<float> C;
+		vector<float> X;
+		vector<pair<double, int>> candidatos;
 		float custoAcumulado;
 	
 };
@@ -197,6 +199,8 @@ LagrangeanSetCovering::LagrangeanSetCovering(Instance &instancia) :
 
 float LagrangeanSetCovering::calcularLowerBound() {
 	this->C = vector<float>(this->instancia.n, 0.0);
+	this->candidatos = vector<pair<double, int>>(this->instancia.n);
+	this->X = vector<float>(this->instancia.n, 0.0);
 
 	float Z_LB = this->custoAcumulado;
 
@@ -207,7 +211,9 @@ float LagrangeanSetCovering::calcularLowerBound() {
 			somaMultiplicadores += this->multiplicadores[j] * this->instancia.matriz[j][i];
 		}
 		this->C[i] -= somaMultiplicadores;
-		Z_LB += this->C[i] * (this->C[i] <= 0);
+		this->X[i] = this->C[i] <= 0;
+		this->candidatos[i] = make_pair(this->C[i], i);
+		Z_LB += this->C[i] * this->X[i];
 	}
 
 	for (const float f : this->multiplicadores) {
@@ -223,7 +229,7 @@ float LagrangeanSetCovering::heuristica() {
 	float custo = this->custoAcumulado;
 
 	for (int i = 0; i < this->instancia.n; i++) {
-		if (this->C[i] <= 0) {
+		if (this->X[i] == 1) {
 			universo = unionSet(this->instancia.coberturas[i], universo);
 			custo += this->instancia.custos[i];
 		}
@@ -242,11 +248,10 @@ float LagrangeanSetCovering::heuristica() {
 
 void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
 	for (int i = 0; i < this->instancia.n; i++) {
-		if (this->C[i] > 0 && Z_LB + this->C[i] > Z_UB) {
+		if (this->X[i] != 1 && Z_LB + this->C[i] > Z_UB) { // C[i] > 0
 			this->instancia.excluirColuna(i);
 			break;
-		} else if (this->C[i] <= 0 && Z_LB - this->C[i] > Z_UB) {
-			cout << Z_LB << ' ' << Z_UB << endl;
+		} else if (Z_LB - this->C[i] > Z_UB) { // C[i] <= 0
 			this->custoAcumulado += this->instancia.custos[i];
 			vector<int> linhasParaExcluir = this->instancia.excluirColuna(i);
 			this->multiplicadores = deleteByIndexes<float>(this->multiplicadores, linhasParaExcluir);
@@ -296,7 +301,7 @@ int main(int argc, char const *argv[]) {
 
 			float soma = 0;
 			for (int j = 0; j < instancia.n; j++) {
-				soma += instancia.matriz[i][j] * (lag.C[j] <= 0); // C[i] <= 0 é X_j
+				soma += instancia.matriz[i][j] * (lag.X[j]);
 			}
 			G[i] -= soma;
 			quadradoSub += G[i] * G[i];
