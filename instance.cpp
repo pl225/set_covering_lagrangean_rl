@@ -211,9 +211,18 @@ float LagrangeanSetCovering::calcularLowerBound() {
 			somaMultiplicadores += this->multiplicadores[j] * this->instancia.matriz[j][i];
 		}
 		this->C[i] -= somaMultiplicadores;
-		this->X[i] = this->C[i] <= 0;
 		this->candidatos[i] = make_pair(this->C[i], i);
-		Z_LB += this->C[i] * this->X[i];
+	}
+
+	sort(this->candidatos.begin(), this->candidatos.end());
+
+	for (int i = 0; i < this->instancia.n; i++) {
+		if (this->candidatos[i].first < 0 && i < this->instancia.m) {
+			this->X[this->candidatos[i].second] = 1;
+			Z_LB += this->C[this->candidatos[i].second];
+		} else {
+			break;
+		}
 	}
 
 	for (const float f : this->multiplicadores) {
