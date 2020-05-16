@@ -50,6 +50,7 @@ class Instance {
 		int melhorCobertura(vector<vector<int>> coberturas, vector<int> universo) const;
 
 		vector<int> excluirColuna(int i);
+		void excluirColunas(vector<int> colunas);
 		void excluirLinhas(vector<int> linhas);
 
 		int n;
@@ -103,6 +104,17 @@ vector<int> Instance::excluirColuna(int i) {
 	this->n--;
 
 	return linhasCobertas;
+}
+
+void Instance::excluirColunas(vector<int> colunas) {
+	sort(colunas.begin(), colunas.end()); // vetor deve estar ordenado
+	this->custos = deleteByIndexes<float>(this->custos, colunas);
+	this->coberturas = deleteByIndexes<vector<int>>(this->coberturas, colunas);
+	for (int i = 0; i < this->m; i++) {
+		this->matriz[i] = deleteByIndexes<char>(this->matriz[i], colunas);
+	}
+	this->colunasExcluidas.insert(this->colunasExcluidas.end(), colunas.begin(), colunas.end());
+	this->n -= colunas.size();
 }
 
 Instance::Instance(string caminho) {
@@ -188,6 +200,7 @@ class LagrangeanSetCovering {
 		vector<float> X;
 		vector<pair<double, int>> candidatos;
 		float custoAcumulado;
+		int indUltimoCandTestado;
 	
 };
 
@@ -195,6 +208,7 @@ LagrangeanSetCovering::LagrangeanSetCovering(Instance &instancia) :
 	instancia(instancia) {
 	this->multiplicadores = vector<float>(instancia.m);
 	this->custoAcumulado = 0;
+	this->indUltimoCandTestado = -1;
 }
 
 float LagrangeanSetCovering::calcularLowerBound() {
@@ -221,6 +235,7 @@ float LagrangeanSetCovering::calcularLowerBound() {
 			this->X[this->candidatos[i].second] = 1;
 			Z_LB += this->C[this->candidatos[i].second];
 		} else {
+			this->indUltimoCandTestado = i;
 			break;
 		}
 	}
@@ -256,7 +271,25 @@ float LagrangeanSetCovering::heuristica() {
 }
 
 void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
-	for (int i = 0; i < this->instancia.n; i++) {
+	// fixação em zero, exclusão
+	if (this->indUltimoCandTestado >= 0) {
+		float troca = 0;
+		vector<int> colunas;
+		if (this->candidatos[this->indUltimoCandTestado].first < 0) { // cobrir teste 1
+			troca = -this->candidatos[this->indUltimoCandTestado - 1].first;
+		}
+		for (int i = this->indUltimoCandTestado; i < this->instancia.n; i++) {
+			if (this->X[this->candidatos[i].second] == 0) {
+				float Z_LB_novo = Z_LB + (troca + this->candidatos[i].first);
+				if (Z_LB_novo > Z_UB) {
+					colunas.push_back(this->candidatos[i].second);
+				}
+			}
+		}
+		this->instancia.excluirColunas(colunas);
+	}
+
+	/*for (int i = 0; i < this->instancia.n; i++) {
 		if (this->X[i] != 1 && Z_LB + this->C[i] > Z_UB) { // C[i] > 0
 			this->instancia.excluirColuna(i);
 			break;
@@ -267,7 +300,7 @@ void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
 			this->instancia.excluirLinhas(linhasParaExcluir);
 			break;
 		}
-	}
+	}*/
 }
 
 int main(int argc, char const *argv[]) {
