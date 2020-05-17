@@ -110,8 +110,10 @@ vector<int> Instance::excluirColunas(vector<int> colunas) {
 	vector<int> linhasExcluir;
 	sort(colunas.begin(), colunas.end()); // vetor deve estar ordenado
 	this->custos = deleteByIndexes<float>(this->custos, colunas);
+
+	vector<int> linhasCobertasExcluidas;
 	for (int c : colunas) {
-		linhasExcluidas = unionSet(coberturas[c], linhasExcluidas);
+		linhasCobertasExcluidas = unionSet(coberturas[c], linhasCobertasExcluidas);
 	}
 	this->coberturas = deleteByIndexes<vector<int>>(this->coberturas, colunas);
 	for (int i = 0; i < this->m; i++) {
@@ -119,7 +121,7 @@ vector<int> Instance::excluirColunas(vector<int> colunas) {
 	}
 	this->colunasExcluidas.insert(this->colunasExcluidas.end(), colunas.begin(), colunas.end());
 	this->n -= colunas.size();
-	return linhasExcluidas;
+	return linhasCobertasExcluidas;
 }
 
 Instance::Instance(string caminho) {
@@ -279,14 +281,10 @@ float LagrangeanSetCovering::heuristica() {
 
 void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
 	// fixação em zero, exclusão
-	float troca = 0;
 	vector<int> colunas;
-	if (this->candidatos[this->indUltimoCandTestado].first < 0) { // cobrir teste 1
-		troca = -this->candidatos[this->indUltimoCandTestado - 1].first;
-	}
 	for (int i = this->indUltimoCandTestado; i < this->instancia.n; i++) {
 		if (this->X[this->candidatos[i].second] == 0) {
-			float Z_LB_novo = Z_LB + (troca + this->candidatos[i].first);
+			float Z_LB_novo = Z_LB + this->C[this->candidatos[i].second];
 			if (Z_LB_novo > Z_UB) {
 				colunas.push_back(this->candidatos[i].second);
 			}
@@ -299,7 +297,7 @@ void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
 	// fim fixacao em zero, exclusão
 
 	// fixacao em 1
-	troca = -1;
+	float troca = 0;
 	for (int i = 0; i < this->instancia.n; i++) {
 		if (this->X[this->candidatos[i].second] == 0) {
 			troca = this->C[this->candidatos[i].second]; // menor custo tal que X é zero
