@@ -280,12 +280,18 @@ float LagrangeanSetCovering::heuristica() {
 }
 
 void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
-	// fixação em zero, exclusão
 	vector<int> colunas;
+	float troca = 0;
+	const float e = -0.0001;
+
+	// fixação em zero, exclusão
+	if (this->indUltimoCandTestado == this->instancia.m) {
+		troca = -this->candidatos[this->indUltimoCandTestado].first;
+	}
 	for (int i = this->indUltimoCandTestado; i < this->instancia.n; i++) {
-		if (this->X[this->candidatos[i].second] == 0) {
-			float Z_LB_novo = Z_LB + this->C[this->candidatos[i].second];
-			if (Z_LB_novo > Z_UB) {
+		if (this->X[this->candidatos[i].second] != 1) {
+			float Z_LB_novo = Z_LB + (troca + this->C[this->candidatos[i].second]);
+			if (Z_LB_novo + e >= Z_UB) {
 				colunas.push_back(this->candidatos[i].second);
 			}
 		}
@@ -297,7 +303,6 @@ void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
 	// fim fixacao em zero, exclusão
 
 	// fixacao em 1
-	float troca = 0;
 	for (int i = 0; i < this->instancia.n; i++) {
 		if (this->X[this->candidatos[i].second] == 0) {
 			troca = this->C[this->candidatos[i].second]; // menor custo tal que X é zero
@@ -307,7 +312,7 @@ void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
 	float custo = 0, custoOriginal = 0;
 	for (int i = 0; i < this->indUltimoCandTestado; i++) {
 		float Z_LB_novo = Z_LB + (troca - this->candidatos[i].first);
-		if (Z_LB_novo > Z_UB) {
+		if (Z_LB_novo + e > Z_UB) {
 			custo += this->candidatos[i].first;
 			custoOriginal += this->instancia.custos[this->candidatos[i].second];
 			colunas.push_back(this->candidatos[i].second);
@@ -341,6 +346,7 @@ int main(int argc, char const *argv[]) {
 
 	float Z_UB = instancia.greedy(); // 6
 	// fim passo 1
+	cout << "Z_UB_inicial: " << Z_UB << endl;
 
 	float Z_MAX = -std::numeric_limits<float>::infinity();
 	int iteracoes_sem_melhora = 0;
@@ -349,7 +355,7 @@ int main(int argc, char const *argv[]) {
 
 	float Z_LB = 0;
 
-	while (Z_MAX < Z_UB && pi > MENOR_PI && i < MAX_IT) {
+	while (/*(Z_UB - Z_MAX) > (1 - 0.00001)*/Z_MAX < Z_UB && pi > MENOR_PI && i < MAX_IT) {
 		
 		// passo 2
 		Z_LB = lag.calcularLowerBound();
@@ -399,11 +405,11 @@ int main(int argc, char const *argv[]) {
 		}
 		i++;
 	}
-	cout << instancia.colunasExcluidas.size() << endl;
-	cout << instancia.linhasExcluidas.size() << endl;
-	cout << Z_UB << endl;
-	cout << i << endl;
-	cout << Z_MAX << endl;
+	cout << "Colunas excluídas: " << instancia.colunasExcluidas.size() << endl;
+	cout << "Linhas excluídas: " << instancia.linhasExcluidas.size() << endl;
+	cout << "Z_UB: " << Z_UB << endl;
+	cout << "Iterações: " << i << endl;
+	cout << "Z_LB: " << Z_MAX << endl;
 
 	return 0;
 }
