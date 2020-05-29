@@ -50,7 +50,7 @@ class Instance {
 		int melhorCobertura(vector<vector<int>> coberturas, vector<int> universo) const;
 
 		vector<int> excluirColuna(int i);
-		vector<int> excluirColunas(vector<int> colunas);
+		vector<int> excluirColunas(vector<int> &colunas);
 		void excluirLinhas(vector<int> linhas);
 
 		int n;
@@ -106,7 +106,7 @@ vector<int> Instance::excluirColuna(int i) {
 	return linhasCobertas;
 }
 
-vector<int> Instance::excluirColunas(vector<int> colunas) {
+vector<int> Instance::excluirColunas(vector<int> &colunas) {
 	vector<int> linhasExcluir;
 	sort(colunas.begin(), colunas.end()); // vetor deve estar ordenado
 	this->custos = deleteByIndexes<float>(this->custos, colunas);
@@ -298,9 +298,19 @@ void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
 	}
 	if (!colunas.empty()) {
 		this->instancia.excluirColunas(colunas);
-		return;
 	}
 	// fim fixacao em zero, exclusão
+
+	/* Rearrumando vetor de candidatos de acordo com as variáveis excluídas */
+	this->X = deleteByIndexes<float>(this->X, colunas);
+	this->C = deleteByIndexes<float>(this->C, colunas);
+	this->candidatos.clear();
+	for (int i = 0; i < this->instancia.n; i++) {
+		this->candidatos.push_back(make_pair(this->C[i], i));
+	}
+	sort(this->candidatos.begin(), this->candidatos.end());
+	colunas.clear();
+	/* Rearrumando vetor de candidatos de acordo com as variáveis excluídas */
 
 	// fixacao em 1
 	for (int i = 0; i < this->instancia.n; i++) {
@@ -338,8 +348,8 @@ int main(int argc, char const *argv[]) {
 	float pi = 2; // 0 < pi <= 2
 	const float MENOR_PI = 0.005;
 	const float PER_Z_UB = 1.02;
-	const int MAX_IT = 1000;
-	const int N = 50; // 30
+	const int MAX_IT = 2000;
+	const int N = 100; // 30
 	int i = 0;
 
 	LagrangeanSetCovering lag(instancia);
