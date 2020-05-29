@@ -209,6 +209,8 @@ class LagrangeanSetCovering {
 		float custoAcumulado;
 		float custoAcumuladoOriginal;
 		int indUltimoCandTestado;
+		int m_0;
+		int m_1;
 	
 };
 
@@ -218,6 +220,8 @@ LagrangeanSetCovering::LagrangeanSetCovering(Instance &instancia) :
 	this->custoAcumulado = 0;
 	this->custoAcumuladoOriginal = 0;
 	this->indUltimoCandTestado = -1;
+	this->m_0 = 1; // número mínimo de variáveis
+	this->m_1 = instancia.m; // número máximo de variáveis
 }
 
 float LagrangeanSetCovering::calcularLowerBound() {
@@ -240,7 +244,7 @@ float LagrangeanSetCovering::calcularLowerBound() {
 	sort(this->candidatos.begin(), this->candidatos.end());
 
 	for (int i = 0; i < this->instancia.n; i++) {
-		if (this->candidatos[i].first < 0 && i < this->instancia.m) {
+		if ((this->candidatos[i].first < 0 && i < this->m_1) || (i < this->m_0)) {
 			this->X[this->candidatos[i].second] = 1;
 			Z_LB += this->C[this->candidatos[i].second];
 		} else {
