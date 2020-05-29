@@ -200,6 +200,8 @@ class LagrangeanSetCovering {
 		float calcularLowerBound();
 		float heuristica();
 		void reduzir(float Z_UB, float Z_LB);
+		vector<int> excluirVariaveis(float Z_UB, float Z_LB, float e);
+		void fixarVariaveis(float Z_UB, float Z_LB, float e);
 
 		vector<float> multiplicadores;
 		Instance &instancia;
@@ -283,12 +285,9 @@ float LagrangeanSetCovering::heuristica() {
 	return custo;
 }
 
-void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
+vector<int> LagrangeanSetCovering::excluirVariaveis(float Z_UB, float Z_LB, float e) {
 	vector<int> colunas;
 	float troca = 0;
-	const float e = -0.0001;
-
-	// fixação em zero, exclusão
 	if (this->indUltimoCandTestado == this->instancia.m) {
 		troca = -this->candidatos[this->indUltimoCandTestado].first;
 	}
@@ -303,20 +302,12 @@ void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
 	if (!colunas.empty()) {
 		this->instancia.excluirColunas(colunas);
 	}
-	// fim fixacao em zero, exclusão
+	return colunas;
+}
 
-	/* Rearrumando vetor de candidatos de acordo com as variáveis excluídas */
-	this->X = deleteByIndexes<float>(this->X, colunas);
-	this->C = deleteByIndexes<float>(this->C, colunas);
-	this->candidatos.clear();
-	for (int i = 0; i < this->instancia.n; i++) {
-		this->candidatos.push_back(make_pair(this->C[i], i));
-	}
-	sort(this->candidatos.begin(), this->candidatos.end());
-	colunas.clear();
-	/* Rearrumando vetor de candidatos de acordo com as variáveis excluídas */
-
-	// fixacao em 1
+void LagrangeanSetCovering::fixarVariaveis(float Z_UB, float Z_LB, float e) {
+	vector<int> colunas;
+	float troca = 0;
 	for (int i = 0; i < this->instancia.n; i++) {
 		if (this->X[this->candidatos[i].second] == 0) {
 			troca = this->C[this->candidatos[i].second]; // menor custo tal que X é zero
@@ -339,7 +330,28 @@ void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
 		this->multiplicadores = deleteByIndexes<float>(this->multiplicadores, linhasExcluir);
 		this->instancia.excluirLinhas(linhasExcluir);
 	}
-	// fim fixação em 1
+}
+
+void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
+	
+	const float e = -0.0001;
+
+	vector<int> colunas = this->excluirVariaveis(Z_UB, Z_LB, e);
+
+	/* Rearrumando vetor de candidatos de acordo com as variáveis excluídas */
+	if (!colunas.empty()) {
+		this->X = deleteByIndexes<float>(this->X, colunas);
+		this->C = deleteByIndexes<float>(this->C, colunas);
+		this->candidatos.clear();
+		for (int i = 0; i < this->instancia.n; i++) {
+			this->candidatos.push_back(make_pair(this->C[i], i));
+		}
+		sort(this->candidatos.begin(), this->candidatos.end());
+		colunas.clear();
+	}
+	/* Rearrumando vetor de candidatos de acordo com as variáveis excluídas */
+
+	this->fixarVariaveis(Z_UB, Z_LB, e);
 }
 
 int main(int argc, char const *argv[]) {
