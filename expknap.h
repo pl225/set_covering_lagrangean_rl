@@ -10,6 +10,6 @@
     c é a capacidade da mochila
 
 */
-long executeExpknap (int n, int p[], int w[], int x[], int c);
+long executeExpknap (int n, int *p, int *w, int *x, int c);
 
 #endif

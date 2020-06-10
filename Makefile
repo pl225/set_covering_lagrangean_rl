@@ -15,4 +15,4 @@ expknap.o: expknap.c
 	gcc -c expknap.c -lm
 
 clean:
-	rm -f set_covering $(OBJECTS_CPP)
+	rm -f set_covering *.o

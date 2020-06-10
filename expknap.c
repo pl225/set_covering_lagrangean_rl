@@ -711,7 +711,7 @@ void alocateInstance(int n, exitem **f, exitem **l) {
 }
 
 
-long executeExpknap (int n, int p[], int w[], int x[], int c) {
+long executeExpknap (int n, int *p, int *w, int *x, int c) {
   exitem *f, *l;
 
   alocateInstance(n, &f, &l);
@@ -721,11 +721,11 @@ long executeExpknap (int n, int p[], int w[], int x[], int c) {
 
   for (j = f, i = 0; j <= l; j++, i++) {
     j->w = w[i];
-    j->p = w[i];
+    j->p = p[i];
   }
 
   long z = expknap(f, l, c);
-
+  
   for (j = f, i = 0; j <= l; j++, i++) {
     x[i] = j->x;
   }

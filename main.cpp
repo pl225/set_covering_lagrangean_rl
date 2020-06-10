@@ -3,12 +3,29 @@
 #include <limits>
 #include <set>
 #include <iostream>
+#include <math.h>
 #include "aux.h"
 #include "instance.h"
 #include "lagrangean.h"
-#include "expknap.h"
+
+extern "C" {
+	#include "expknap.h"
+}
 
 using namespace std;
+
+void callExpknap (Instance instance, LagrangeanSetCovering lag) {
+	int p[instance.n], w[instance.n], x[instance.n];
+
+	for (int i = 0; i < instance.n; i++) {
+		p[i] = (int) ceil(lag.C[i] * 1000);
+		w[i] = instance.coberturas[i].size();
+		x[i] = 0;
+	}
+
+	long z = executeExpknap(instance.n, p, w, x, instance.m);
+
+}
 
 int main(int argc, char const *argv[]) {
 	if (argc == 0) {
@@ -41,6 +58,7 @@ int main(int argc, char const *argv[]) {
 		
 		// passo 2
 		Z_LB = lag.calcularLowerBound();
+		callExpknap(instancia, lag);
 		// fim passo 2
 		
 		float quadradoSub = 0;
