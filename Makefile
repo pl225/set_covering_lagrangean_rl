@@ -1,6 +1,6 @@
 CPP= g++
 CFLAGS= -O3
-SRC_CPP = aux.cpp instance.cpp main.cpp
+SRC_CPP = aux.cpp instance.cpp lagrangean.cpp main.cpp
 OBJECTS_CPP = $(subst .cpp,.o, $(SRC_CPP))
 
 all: set_covering
