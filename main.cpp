@@ -6,6 +6,7 @@
 #include "aux.h"
 #include "instance.h"
 #include "lagrangean.h"
+#include "expknap.h"
 
 using namespace std;
 
