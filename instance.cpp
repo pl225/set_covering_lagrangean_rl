@@ -335,6 +335,27 @@ void LagrangeanSetCovering::fixarVariaveis(float Z_UB, float Z_LB, float e) {
 void LagrangeanSetCovering::reduzir(float Z_UB, float Z_LB) {
 	
 	const float e = -0.0001;
+	float somaCustos = 0;
+
+	if (this->indUltimoCandTestado < this->m_1) {
+		for (int i = this->indUltimoCandTestado; i < this->m_1; i++) {
+			somaCustos += this->candidatos[i].first;
+			if (Z_LB + somaCustos > Z_UB) {
+				this->m_1 = i;
+				break;
+			}
+		}
+	}
+	if (this->indUltimoCandTestado > this->m_0) {
+		somaCustos = 0;
+		for (int i = this->indUltimoCandTestado - 1; i > this->m_0; i--) {
+			somaCustos += this->candidatos[i].first;
+			if (Z_LB - somaCustos > Z_UB) {
+				this->m_0 = i;
+				break;
+			}
+		}
+	}
 
 	vector<int> colunas = this->excluirVariaveis(Z_UB, Z_LB, e);
 
@@ -431,6 +452,7 @@ int main(int argc, char const *argv[]) {
 		}
 		i++;
 	}
+	cout << "m_1: " << lag.m_1 << ", m_0: " << lag.m_0 << endl;
 	cout << "Colunas excluídas: " << instancia.colunasExcluidas.size() << endl;
 	cout << "Linhas excluídas: " << instancia.linhasExcluidas.size() << endl;
 	cout << "Z_UB: " << Z_UB << endl;
