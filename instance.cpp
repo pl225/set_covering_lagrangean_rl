@@ -4,42 +4,9 @@
 #include <algorithm>
 #include <limits>
 #include <set>
+#include "aux.h"
 
 using namespace std;
-
-vector<int> unionSet(vector<int> s1, vector<int> s2) {
-	vector<int> uniao (s1.size() + s2.size());
-	vector<int>::iterator it;
-
-	it = set_union(s1.begin(), s1.end(), s2.begin(), s2.end(), uniao.begin());
-	uniao.resize(it - uniao.begin());
-
-	return uniao;
-}
-
-vector<int> diffSet(vector<int> s1, vector<int> s2) {
-	vector<int> diff (s1.size());
-	vector<int>::iterator it;
-
-	it = set_difference(s1.begin(), s1.end(), s2.begin(), s2.end(), diff.begin());
-	diff.resize(it - diff.begin());
-
-	return diff;
-}
-
-template <typename tipo> vector<tipo> deleteByIndexes(vector<tipo> vetor, vector<int> indices) {
-	vector<tipo> vetorNovo;
-	int i = 0, j = 0;
-	while (i < vetor.size()) {
-		if (j < indices.size() && indices[j] == i) {
-			j++;
-		} else {
-			vetorNovo.push_back(vetor[i]);
-		}
-		i++;
-	}
-	return vetorNovo;
-}
 
 class Instance {
 
