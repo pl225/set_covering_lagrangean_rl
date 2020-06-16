@@ -27,9 +27,7 @@ class SolucaoExpknap {
 
 SolucaoExpknap callExpknap (Instance instance, LagrangeanSetCovering lag) {
 	vector<int> p, w, x, variaveisCustoPositivo, mapeamentoVariaveis;
-	int somaQ = 0;
-	float somaCustosLagrangeanos = 0;
-	
+	int somaQ = 0;	
 
 	for (int i = 0; i < instance.n; i++) {
 		if (lag.C[i] > 0) {
