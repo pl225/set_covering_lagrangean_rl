@@ -727,7 +727,7 @@ long executeExpknap (int n, int *p, int *w, int *x, int c) {
   long z = expknap(f, l, c);
   
   for (j = f, i = 0; j <= l; j++, i++) {
-    x[i] = j->x;
+    x[i] = 1 - j->x;
   }
 
   return z;

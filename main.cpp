@@ -14,16 +14,49 @@ extern "C" {
 
 using namespace std;
 
-void callExpknap (Instance instance, LagrangeanSetCovering lag) {
+class SolucaoExpknap {
+	public:
+		float limiteDual;
+		float z;
+		vector<int> x;
+
+		SolucaoExpknap (int n, float limiteDual, float z, int x[]) {
+			this->limiteDual = limiteDual;
+			this->z = z;
+			for (int i = 0; i < n; i++) {
+				this->x.push_back(x[i]);
+			}
+		}
+};
+
+SolucaoExpknap callExpknap (Instance instance, LagrangeanSetCovering lag) {
 	int p[instance.n], w[instance.n], x[instance.n];
+	int somaQ = 0;
+	float somaCustosLagrangeanos = 0;
 
 	for (int i = 0; i < instance.n; i++) {
-		p[i] = (int) ceil(lag.C[i] * 1000);
-		w[i] = instance.coberturas[i].size();
+		p[i] = (int) ceil(lag.C[i] * 1000); // teto do custo multiplicado por cem
+		w[i] = instance.coberturas[i].size(); // quantidade de linhas cobertas pela variável
+		somaQ += w[i]; // somatório das quantidades de linhas cobertas
+		somaCustosLagrangeanos += lag.C[i]; // somatório dos custos lagrangeanos
 		x[i] = 0;
 	}
 
-	long z = executeExpknap(instance.n, p, w, x, instance.m);
+	int c = somaQ - instance.m; // capacidade da mochila
+	long z = executeExpknap(instance.n, p, w, x, c);
+
+	float constante = 0;
+	for (const float f: lag.multiplicadores) {
+		constante += f; // somatório dos multiplicadores lagrangeanos
+	}
+	float limiteDual = (-z / 1000) + somaCustosLagrangeanos + constante;
+
+	float limiteSuperior = 0;
+	for (int i = 0; i < instance.n; i++) {
+		limiteSuperior += lag.C[i] * x[i];
+	}
+
+	return SolucaoExpknap(instance.n, limiteDual, limiteSuperior, x);
 
 }
 
@@ -58,7 +91,7 @@ int main(int argc, char const *argv[]) {
 		
 		// passo 2
 		Z_LB = lag.calcularLowerBound();
-		callExpknap(instancia, lag);
+		SolucaoExpknap knapsack = callExpknap(instancia, lag);
 		// fim passo 2
 		
 		float quadradoSub = 0;
@@ -69,7 +102,7 @@ int main(int argc, char const *argv[]) {
 
 			float soma = 0;
 			for (int j = 0; j < instancia.n; j++) {
-				soma += instancia.matriz[i][j] * (lag.X[j]);
+				soma += instancia.matriz[i][j] * knapsack.x[j];// (lag.X[j]);
 			}
 			G[i] -= soma;
 			quadradoSub += G[i] * G[i];
@@ -77,7 +110,7 @@ int main(int argc, char const *argv[]) {
 		// fim passo 3
 
 		// passo 4
-		float T = (pi * (PER_Z_UB * Z_UB - Z_LB)) / quadradoSub;
+		float T = (pi * (PER_Z_UB * Z_UB - knapsack.limiteDual)) / quadradoSub;
 		// fim passo 4
 		float candidatoValor = 0;
 
