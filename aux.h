@@ -2,6 +2,7 @@
 #define AUX_H
 
 #include <vector>
+#include <numeric>
 
 std::vector<int> unionSet(std::vector<int> s1, std::vector<int> s2);
 std::vector<int> diffSet(std::vector<int> s1, std::vector<int> s2);
@@ -18,6 +19,14 @@ template <typename tipo> std::vector<tipo> deleteByIndexes(std::vector<tipo> vet
 		i++;
 	}
 	return vetorNovo;
+}
+
+template <typename tipo> tipo somatorio (std::vector<tipo> vetor) {
+	return std::accumulate (
+		vetor.begin(), 
+		vetor.end(),
+		0.0
+	);
 }
 
 #endif

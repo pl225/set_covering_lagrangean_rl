@@ -17,46 +17,49 @@ using namespace std;
 class SolucaoExpknap {
 	public:
 		float limiteDual;
-		float z;
 		vector<int> x;
 
-		SolucaoExpknap (int n, float limiteDual, float z, int x[]) {
+		SolucaoExpknap (int n, float limiteDual, vector<int> x) {
 			this->limiteDual = limiteDual;
-			this->z = z;
-			for (int i = 0; i < n; i++) {
-				this->x.push_back(x[i]);
-			}
+			this->x = x;
 		}
 };
 
 SolucaoExpknap callExpknap (Instance instance, LagrangeanSetCovering lag) {
-	int p[instance.n], w[instance.n], x[instance.n];
+	vector<int> p, w, x, variaveisCustoPositivo, mapeamentoVariaveis;
 	int somaQ = 0;
 	float somaCustosLagrangeanos = 0;
+	
 
 	for (int i = 0; i < instance.n; i++) {
-		p[i] = (int) ceil(lag.C[i] * 1000); // teto do custo multiplicado por cem
-		w[i] = instance.coberturas[i].size(); // quantidade de linhas cobertas pela variável
-		somaQ += w[i]; // somatório das quantidades de linhas cobertas
-		somaCustosLagrangeanos += lag.C[i]; // somatório dos custos lagrangeanos
-		x[i] = 0;
+		if (lag.C[i] > 0) {
+			p.push_back((int) ceil(lag.C[i] * 1000)); // teto do custo multiplicado por cem
+			w.push_back(instance.coberturas[i].size()); // quantidade de linhas cobertas pela variável
+			somaQ += w.back(); // somatório das quantidades de linhas cobertas
+			x.push_back(0);
+			variaveisCustoPositivo.push_back(i);
+		}
+	}
+
+	if (variaveisCustoPositivo.empty()) {
+		return SolucaoExpknap(instance.n, somatorio<float>(lag.multiplicadores), vector<int>(instance.n, 1));
 	}
 
 	int c = somaQ - instance.m; // capacidade da mochila
-	long z = executeExpknap(instance.n, p, w, x, c);
+	long z = executeExpknap(variaveisCustoPositivo.size(), p.data(), w.data(), x.data(), c);
 
-	float constante = 0;
-	for (const float f: lag.multiplicadores) {
-		constante += f; // somatório dos multiplicadores lagrangeanos
+	float limiteDual = (-z / 1000) + somatorio<float>(lag.C) + somatorio<float>(lag.multiplicadores);
+
+	for (int i = 0, j = 0; i < instance.n; i++) {
+		if (j < variaveisCustoPositivo.size() && variaveisCustoPositivo[j] == i) {
+			mapeamentoVariaveis.push_back(x[i]);
+			j++;
+		} else {
+			mapeamentoVariaveis.push_back(1);
+		}
 	}
-	float limiteDual = (-z / 1000) + somaCustosLagrangeanos + constante;
 
-	float limiteSuperior = 0;
-	for (int i = 0; i < instance.n; i++) {
-		limiteSuperior += lag.C[i] * x[i];
-	}
-
-	return SolucaoExpknap(instance.n, limiteDual, limiteSuperior, x);
+	return SolucaoExpknap(instance.n, limiteDual, mapeamentoVariaveis);
 
 }
 
