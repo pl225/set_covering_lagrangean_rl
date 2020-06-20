@@ -730,6 +730,8 @@ long executeExpknap (int n, int *p, int *w, int *x, int c) {
     x[i] = 1 - j->x;
   }
 
+  freeinstance(f);
+
   return z;
 
 }
