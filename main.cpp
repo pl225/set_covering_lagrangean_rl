@@ -50,7 +50,7 @@ SolucaoExpknap callExpknap (Instance instance, LagrangeanSetCovering lag) {
 
 	for (int i = 0, j = 0; i < instance.n; i++) {
 		if (j < variaveisCustoPositivo.size() && variaveisCustoPositivo[j] == i) {
-			mapeamentoVariaveis.push_back(x[i]);
+			mapeamentoVariaveis.push_back(x[j]);
 			j++;
 		} else {
 			mapeamentoVariaveis.push_back(1);
@@ -94,7 +94,6 @@ int main(int argc, char const *argv[]) {
 		Z_LB = lag.calcularLowerBound();
 		SolucaoExpknap knapsack = callExpknap(instancia, lag);
 		// fim passo 2
-		
 		float quadradoSub = 0;
 
 		// passo 3
