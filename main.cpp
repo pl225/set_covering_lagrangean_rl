@@ -27,26 +27,31 @@ class SolucaoExpknap {
 
 SolucaoExpknap callExpknap (Instance instance, LagrangeanSetCovering lag) {
 	vector<int> p, w, x, variaveisCustoPositivo, mapeamentoVariaveis;
-	int somaQ = 0;	
+	int somaQ = 0;
+	float fConstante = somatorio<float>(lag.C) + somatorio<float>(lag.multiplicadores);
 
 	for (int i = 0; i < instance.n; i++) {
+		somaQ += instance.coberturas[i].size(); // somatório das quantidades de linhas cobertas
 		if (lag.C[i] > 0) {
 			p.push_back((int) ceil(lag.C[i] * 1000)); // teto do custo multiplicado por cem
 			w.push_back(instance.coberturas[i].size()); // quantidade de linhas cobertas pela variável
-			somaQ += w.back(); // somatório das quantidades de linhas cobertas
 			x.push_back(0);
 			variaveisCustoPositivo.push_back(i);
 		}
 	}
 
 	if (variaveisCustoPositivo.empty()) {
-		return SolucaoExpknap(instance.n, somatorio<float>(lag.multiplicadores), vector<int>(instance.n, 1));
+		return SolucaoExpknap(
+			instance.n, 
+			fConstante, 
+			vector<int>(instance.n, 1)
+		);
 	}
-
+	
 	int c = somaQ - instance.m; // capacidade da mochila
 	long z = executeExpknap(variaveisCustoPositivo.size(), p.data(), w.data(), x.data(), c);
 
-	float limiteDual = (-z / 1000) + somatorio<float>(lag.C) + somatorio<float>(lag.multiplicadores);
+	float limiteDual = (-z / 1000) + fConstante;
 
 	for (int i = 0, j = 0; i < instance.n; i++) {
 		if (j < variaveisCustoPositivo.size() && variaveisCustoPositivo[j] == i) {
@@ -94,6 +99,7 @@ int main(int argc, char const *argv[]) {
 		Z_LB = lag.calcularLowerBound();
 		SolucaoExpknap knapsack = callExpknap(instancia, lag);
 		// fim passo 2
+		//cout << knapsack.limiteDual << endl;
 		float quadradoSub = 0;
 
 		// passo 3
