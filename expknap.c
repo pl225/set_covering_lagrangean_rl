@@ -569,7 +569,8 @@ stype heuristic(item *f, item *l)
   register itype r, z, pb, dz;
 
   ps = 0; ws = c;
-  for (i = f; i->w <= ws; i++) {
+  int n = l-f, a = 0;
+  for (i = f; a < n && i->w <= ws; i++, a++) {
     ws -= i->w;
     ps += i->p;
     *(i->x) = 1;
